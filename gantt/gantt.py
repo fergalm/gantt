@@ -3,9 +3,13 @@
 Created on Thu May 21 07:10:31 2020
 
 TODO
+o Time axis in business days
+    o Adjust schedules for weekends
+o Autorefresh
+
 o Plotting
-    o Dependency lines
-    o Colour code the boxes somehow
+    x Dependency lines
+    x Colour code the boxes somehow
         o By user
         o By label name (1.* gets a colour?)
         o By status (blocked, inprogress, late, violates end date, ...)
@@ -16,7 +20,6 @@ o Plotting
 o Assign tasks to chains
 o Sort tasks by chain, and position in chain, then re-optimize
 o Convert input start/end dates from UTC to JD
-o Adjust schedules for weekends
 o Create per user schedule
 o Propegate uncertainty through the chart
 o check for integer labels, and raise an error
