@@ -4,7 +4,11 @@ Created on Thu May 21 07:10:31 2020
 
 TODO
 o Time axis in business days
-    o Adjust schedules for weekends
+    x Mark weekends
+    o Start/end has to be in datetimes
+    o Fix the Marking of  startBy and endBy dates
+    x Highlight boxes now have to be in date time space
+    
 o Autorefresh
 
 o Plotting
@@ -30,15 +34,18 @@ o Check for self dependency (at least at a single level)
 from ipdb import set_trace as idebug
 from pdb import set_trace as debug
 import matplotlib.pyplot as plt
+
+from pandas.tseries.holiday import USFederalHolidayCalendar
+from pandas.tseries.offsets import CustomBusinessDay
 import pandas as pd
 import numpy as np
 
 # import collections
-import graphics
-import critpath
-import colour
-import hover
-import plot
+import gantt.graphics as graphics
+import gantt.critpath as critpath
+import gantt.colour as colour
+import gantt.hover as hover
+#import gantt.plot as plot
 
 class Task():
     """
@@ -79,7 +86,7 @@ class Task():
 
 
 
-def main(fn):
+def main(fn, start_date):
     raw= loadTable(fn)
 
     plt.clf()
@@ -90,12 +97,28 @@ def main(fn):
     sortedList = graphics.sortTaskList(optimal, 'user')
     clr = colour.ColourByUser(sortedList)
     # clr = colour.ColourByStartDate(sortedList)
+
+    sortedList = compute_calendar_dates(sortedList, start_date)
     graphics.plotTaskList(sortedList, clr)
 
     clr.legend()
     handle = hover.Interact(sortedList)
     return handle
 
+
+def compute_calendar_dates(tasklist, start_date):
+    max_day = tasklist[-1].x + tasklist[-1].dur + 1
+                
+
+    bus_day = CustomBusinessDay(calendar=USFederalHolidayCalendar())
+    dates = pd.date_range(start=start_date, periods=max_day, freq=bus_day)
+    print(dates)
+    
+    for t in tasklist:
+        t.start_date = dates[int(t.x)]
+        t.end_date = dates[int(t.x + t.dur)]
+        print(t)
+    return tasklist
 
 
 def loadTable(fn):

@@ -36,6 +36,7 @@ class ColourBy():
 
     def legend(self, **kwargs):
 
+        xlim = plt.xlim()
         handles = []
         labels = []
 
@@ -46,7 +47,7 @@ class ColourBy():
             labels.append(k)
 
         plt.legend(handles, labels, **kwargs)
-
+        plt.xlim(xlim)
 
 class ColourByUser(ColourBy):
     def __call__(self, task):

@@ -4,6 +4,7 @@ def find(label, tasklist):
         if tasklist[i].label == label:
             return i
 
-    raise ValueError("label '%s' not found" %(label))
-
+    #I've turned this off because the weekend markers were raising errors.
+    #raise ValueError("label '%s' not found" %(label))
+    return None
 

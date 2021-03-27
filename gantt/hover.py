@@ -6,7 +6,7 @@ Show an tooltip
 from ipdb import set_trace as idebug
 import matplotlib.pyplot as plt
 
-import utils
+import gantt.utils as utils
 
 artists = []
 
@@ -50,7 +50,11 @@ class Interact():
             del x
 
     def update_tooltip(self, event, label):
-        task = self.tasklist[ utils.find(label, self.tasklist) ]
+        wh = utils.find(label, self.tasklist)
+        if wh is None:
+            return 
+        
+        task = self.tasklist[wh]
 
         x, y = event.xdata, event.ydata
         label = "%s %s\n%s" %(task.label, task.user, task.description)
@@ -74,8 +78,9 @@ class Interact():
 
         deps = []
         i = utils.find(label, self.tasklist)
-        t0 = self.tasklist[i]
-        deps.extend(t0.depend)
+        if i is not None:
+            t0 = self.tasklist[i]
+            deps.extend(t0.depend)
 
         i = 0
         while i < len(deps):
@@ -96,10 +101,10 @@ class Interact():
         index = utils.find(label, self.tasklist)
         task = self.tasklist[index]
 
-        x1 = task.x
-        width = task.dur
-        y1 = len(self.tasklist) - index - .5
-        height = 1
+        x1 = task.start_date
+        width = task.end_date - x1
+        y1 = len(self.tasklist) - index - .2
+        height = .4
 
         box = plt.Rectangle((x1, y1), width, height, fill=False, lw=4, color='k')
         plt.gca().add_artist(box)

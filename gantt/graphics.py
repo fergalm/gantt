@@ -12,11 +12,12 @@ Created on Tue Jun 23 15:11:45 2020
 
 from ipdb import set_trace as idebug
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 
 import matplotlib.ticker as mticker
-import utils
-import colour
+import gantt.utils as utils
+import gantt.colour as colour
 
 def sortTaskList(tasklist, sortby='startdate'):
     if sortby == 'startdate':
@@ -33,11 +34,12 @@ def sortTaskList(tasklist, sortby='startdate'):
     return sorted(tasklist, key=keyfunc)
 
 def plotTaskList(tasklist, colourby=None):
-
+ 
     if colourby is None:
         colourby = colour.ColourByStartDate(tasklist)
 
-    offset = .1
+    offset = 0.1 * pd.to_timedelta('1D')
+
     ax = plt.gca()
     tl = tasklist
     num = len(tl)
@@ -46,28 +48,29 @@ def plotTaskList(tasklist, colourby=None):
         y1 = num - i
         plotTaskBox(ax, y1, task, colourby, offset)
         connectDependencies(tl, task.label, offset)
-        markTimeBox(y1, task)
+        #markTimeBox(y1, task)
 
     ax = plt.gca()
     # labels = list(map(lambda x: "%s: %s" %(x.label, x.description), tl))[::-1]
     labels = list(map(lambda x: "%s: %s.." %(x.label, x.description[:8]), tl))[::-1]
     labels = [""] + labels
     locator = mticker.IndexLocator(1, 0)
-
-    ax.xaxis.set_major_locator(mticker.MultipleLocator(1))
+    
+    #ax.xaxis.set_major_locator(mticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(locator)
     ax.yaxis.set_ticklabels(labels)
+    mark_weekends()
 
 
 def plotTaskBox(ax, y1, task, colourby, offset):
-    x1 = task.x + offset
+    x1 = task.start_date + offset 
+    x2 = task.end_date - offset 
+    width = x2-x1
+    
     fc, ec = colourby(task)
-    # ec = 'grey'
 
     label = task.label  #Used to connect the artist back to the task
-    # plt.plot([x1, x2], [y1, y1], '-', color=clr, lw=8, label=label)
-    width = task.dur - 2*offset
-    patch = plt.Rectangle((x1, y1-.5), width=width, height=1, fc=fc, ec=ec, label=label)
+    patch = plt.Rectangle((x1, y1-.2), width=width, height=.4, fc=fc, ec=ec, label=label)
     ax.add_artist(patch)
 
 
@@ -86,32 +89,61 @@ def markLateTask(x1, x2, y1):
 
 
 def connectDependencies(tasklist, label, offset):
+    unit = pd.to_timedelta('1D')
     num = len(tasklist)
     i2 = utils.find(label, tasklist)
     task2 = tasklist[i2]
     depends = task2.depend
 
-    t2 = task2.x
+    t2 = task2.start_date
     for n, d in enumerate(depends):
         i1 = utils.find(d, tasklist)
         priorTask = tasklist[i1]
 
-        t1 = priorTask.x + priorTask.dur
-        plotConnector(num-i1, t1, num-i2, t2)
+        t1 = priorTask.end_date 
+        plotConnector(num-i1, t1, num-i2, t2, offset)
 
 
-def plotConnector(col1, t1, col2, t2, offset=0):
+def plotConnector(col1, t1, col2, t2, offset):
     fmt = 'k-'
     config = {'lw':1}
-
-    offset = .1
 
     delt = 0
     # if t2 - t1 > .5:
     #     delt = .25
 
-    delt += -0.05 + .1 * np.random.rand()
-    #plt.plot([t1, t2], [col1, col2], 'k-')
+    #delt += offset + .1 * np.random.rand()
+    delt = .1 * np.random.rand() * offset
     plt.plot([t1-offset, t1+delt], [col1, col1], fmt, **config, zorder=+100)
     plt.plot([t1+delt, t1+delt], [col1, col2], fmt, zorder=-10, **config)
     plt.plot([t1+delt, t2+offset], [col2, col2], fmt, **config)
+
+
+import matplotlib as mpl
+def mark_weekends():
+    """Plot grey bars to indicate night time in the central timezone"""
+    t1, t2 = plt.xlim()
+    t1 = mpl.dates.num2date(t1)
+    t2 = mpl.dates.num2date(t2)
+    print (t1, t2)
+
+    day_start = pd.date_range(start=t1, end=t2, freq='D')
+
+    #Edge case: First day of data set is Sunday
+    day = day_start[0]
+    if day.dayofweek == 6:
+        delta = pd.to_timedelta("1D")
+        handle = plt.axvspan(day-delta, day+delta, color='b', alpha=.1)
+        plt.xlim(xmin=min(timestamps))
+
+    for day in day_start:
+        if day.dayofweek == 5:
+            delta = pd.to_timedelta("2D")
+            handle = plt.axvspan(day, day+delta, color='b', alpha=.1)
+
+    try:
+        handle.set_label("Weekend")
+    except UnboundLocalError:
+        #No weekends marked
+        pass
+    
