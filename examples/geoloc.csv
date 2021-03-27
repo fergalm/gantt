@@ -1,0 +1,13 @@
+"Label","Description","Duration","Assignee","Dependencies","StartAfter","EndBy","Status"
+"t1","OPIS",1,"DS",,,,
+"t2","General Ping List Func",1,"DS",,,,
+"t3.1","Heat maps",1,"DS","t2",,,
+"t3.2","Heat map Anomaly",1,"DS","t3.1",,,
+"t4","Device List func.",1,"DS",,,,
+"t5","Query by Tracks",1,"DS",,,,"Done"
+"t6","SUP+PZ",1,"DS","t2,t4",,,
+"t7","Ground truth dashboard",1,"DS","t6",,,
+"t8","App based normalisation",1,"DS","t6",,,
+"t9","Supply Cross Chain",1,"DS","t4,t5",,,
+"t10","AOI Discovery",1,"DS","t4,t5",,,
+"t11","Country of Origin",1,"DS","t4,t5",,,

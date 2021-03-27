@@ -1,0 +1,11 @@
+Label,Description,Epic,Duration,Assignee,Dependencies,StartAfter,EndBy,Status ,Notes
+DS-502a,Submit missing AOIs,OPIS,1,me,,,,Done,"I need to run the monitor. If it passes, I’m done"
+xi-a,Prep API slides,Xmode,1,you,,,,Done,
+DS-502,Run Opis through Jenkins,OPIS,1,you,"DS-501b,DS-501d,DS-503,DS-502e",,,Stopped,
+DS-503,Fix missing AOIs bug,Xmode,1,you,DS-502e,,,Done,
+DS-501a,Adapt for x-mode,Xmode,1,me,,,,Done,
+DS-501b,Retry,Xmode,1,me,DS-501a,,,Done,
+DS-501c,Refactor,Xmode,1,me,DS-501a,,,InProgress,
+DS-501d,Regression test,Xmode,1,me,DS-501a,,,Done,
+DS-502e,Missing AOI test,Xmode,1,me,,,,Done,
+DS-500,Simple Stable Panel,Stable Panel,1,me,,,,ToDo,
