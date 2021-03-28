@@ -25,6 +25,8 @@ def plotTaskList(tasklist, colourby=None):
     if colourby is None:
         colourby = colour.ColourByStartDate(tasklist)
 
+    #Tasks have this much time cut off each end to make 
+    #the graphics a bit prettier
     offset = 0.1 * pd.to_timedelta('1D')
 
     ax = plt.gca()
