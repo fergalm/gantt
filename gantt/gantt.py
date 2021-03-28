@@ -45,6 +45,7 @@ import gantt.graphics as graphics
 import gantt.critpath as critpath
 import gantt.colour as colour
 import gantt.hover as hover
+import gantt.utils as utils
 #import gantt.plot as plot
 
 class Task():
@@ -89,34 +90,40 @@ class Task():
 def main(fn, start_date):
     raw= loadTable(fn)
 
-    plt.clf()
-    # rough = critpath.sortByCriticalPath(raw)
-    rough = roughSort(raw)
-    optimal = optimize(rough)
-    sortedList = sortTaskList(optimal, 'user')
+    start_mjd = utils.to_mjd(start_date)
 
+    # rough = critpath.sortByCriticalPath(raw)
+    rough = roughSort(raw, start_mjd)
+    optimal = optimize(rough, start_mjd)
+    sortedList = sortTaskList(optimal, 'user')
+    
     clr = colour.ColourByUser(sortedList)
     # clr = colour.ColourByStartDate(sortedList)
 
-    sortedList = compute_calendar_dates(sortedList, start_date)
-    graphics.plotTaskList(sortedList, clr)
+    sortedList = compute_calendar_dates(sortedList)
 
+    plt.clf()
+    graphics.plotTaskList(sortedList, clr)
     clr.legend()
     handle = hover.Interact(sortedList)
     return handle
 
 
-def compute_calendar_dates(tasklist, start_date):
-    max_day = tasklist[-1].x + tasklist[-1].dur + 1
+def compute_calendar_dates(tasklist):
+    min_mjd = tasklist[0].x
+    max_mjd = tasklist[-1].x + tasklist[-1].dur + 1
+    num_days = max_mjd - min_mjd
                 
+    start_date = utils.from_mjd(min_mjd)
 
     bus_day = CustomBusinessDay(calendar=USFederalHolidayCalendar())
-    dates = pd.date_range(start=start_date, periods=max_day, freq=bus_day)
-    print(dates)
-    
+    dates = pd.date_range(start=start_date, periods=num_days, freq=bus_day)
+   
+    print(len(dates))
     for t in tasklist:
-        t.start_date = dates[int(t.x)]
-        t.end_date = dates[int(t.x + t.dur)]
+        print(t.x, t.x - min_mjd, t.x - min_mjd + t.dur)
+        t.start_date = dates[int(t.x - min_mjd)]
+        t.end_date = dates[int(t.x + t.dur - min_mjd)]
         print(t)
     return tasklist
 
@@ -165,7 +172,7 @@ def loadTable(fn):
     return tasklist
 
 
-def roughSort(tasklist, project_start_jd=0):
+def roughSort(tasklist, project_start_mjd):
     maxLoop = 1000
 
     task = tasklist
@@ -197,13 +204,23 @@ def roughSort(tasklist, project_start_jd=0):
         print("Max loops exceeded")
 
     tasklist = sorted(tasklist, key=lambda x: x.x)
+
+    #Convert task.x to julian days
+    taskist = set_mjd_for_tasks(tasklist, project_start_mjd)
     return tasklist
 
 
-def optimize(tasklist):
+def set_mjd_for_tasks(tasklist, project_start_mjd):
+    for t in tasklist:
+        t.x += project_start_mjd
+    return tasklist
+
+
+def optimize(tasklist, project_start_mjd):
     for i in range(len(tasklist)):
         taski = tasklist[i]
-        x0 = taski.startAfter
+        x0 = utils.to_mjd(taski.startAfter)
+        x0 = max(x0, project_start_mjd)
 
         for j in range(i):
             taskj = tasklist[j]
@@ -212,8 +229,8 @@ def optimize(tasklist):
                     x0 = max(x0, taskj.x + taskj.dur)
         tasklist[i].x = x0
 
-        if tasklist[i].x > tasklist[i].startBy:
-            print("Project %i will be late! (%s)" %(i, taski))
+        #if tasklist[i].x > tasklist[i].startBy:
+            #print("Project %i will be late! (%s)" %(i, taski))
 
     return tasklist
 
