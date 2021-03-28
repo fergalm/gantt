@@ -19,19 +19,6 @@ import matplotlib.ticker as mticker
 import gantt.utils as utils
 import gantt.colour as colour
 
-def sortTaskList(tasklist, sortby='startdate'):
-    if sortby == 'startdate':
-        keyfunc = lambda x: x.x
-    elif sortby == 'enddate':
-        keyfunc = lambda x: x.x + x.dur
-    elif sortby == 'label':
-        keyfunc = lambda x: x.label
-    elif sortby == 'user':
-        keyfunc = lambda x: x.user
-    else:
-        raise ValueError("Sort request not understood")
-
-    return sorted(tasklist, key=keyfunc)
 
 def plotTaskList(tasklist, colourby=None):
  

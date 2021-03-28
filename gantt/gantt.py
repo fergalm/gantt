@@ -90,11 +90,11 @@ def main(fn, start_date):
     raw= loadTable(fn)
 
     plt.clf()
-    rough = roughSort(raw)
     # rough = critpath.sortByCriticalPath(raw)
-
+    rough = roughSort(raw)
     optimal = optimize(rough)
-    sortedList = graphics.sortTaskList(optimal, 'user')
+    sortedList = sortTaskList(optimal, 'user')
+
     clr = colour.ColourByUser(sortedList)
     # clr = colour.ColourByStartDate(sortedList)
 
@@ -216,6 +216,21 @@ def optimize(tasklist):
             print("Project %i will be late! (%s)" %(i, taski))
 
     return tasklist
+
+
+def sortTaskList(tasklist, sortby='startdate'):
+    if sortby == 'startdate':
+        keyfunc = lambda x: x.x
+    elif sortby == 'enddate':
+        keyfunc = lambda x: x.x + x.dur
+    elif sortby == 'label':
+        keyfunc = lambda x: x.label
+    elif sortby == 'user':
+        keyfunc = lambda x: x.user
+    else:
+        raise ValueError("Sort request not understood")
+
+    return sorted(tasklist, key=keyfunc)
 
 
 def find(label, tasklist):
