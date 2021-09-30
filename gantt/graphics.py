@@ -123,7 +123,7 @@ def mark_weekends():
     if day.dayofweek == 6:
         delta = pd.to_timedelta("1D")
         handle = plt.axvspan(day-delta, day+delta, color='b', alpha=.1)
-        plt.xlim(xmin=min(timestamps))
+        plt.xlim(xmin=t1)
 
     for day in day_start:
         if day.dayofweek == 5:

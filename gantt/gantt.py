@@ -111,8 +111,8 @@ def main(fn, start_date):
 
 def compute_calendar_dates(tasklist):
     min_mjd = tasklist[0].x
-    max_mjd = tasklist[-1].x + tasklist[-1].dur + 1
-    num_days = max_mjd - min_mjd
+    end_dates = list(map(lambda x: x.x + x.dur, tasklist))
+    num_days = np.max(end_dates) - min_mjd + 1
                 
     start_date = utils.from_mjd(min_mjd)
 
