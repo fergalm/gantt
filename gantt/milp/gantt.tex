@@ -1,0 +1,156 @@
+
+\documentclass[12pt]{article}
+
+% \usepackage{amssymb}
+\usepackage[usenames,dvipsnames,svgnames]{xcolor}
+% % \usepackage{lscape} % for landscape figures/tables
+\usepackage{amsmath, mathrsfs,amsfonts,amssymb}
+\usepackage{relsize}
+\usepackage{graphicx}
+% \usepackage[width=.9\columnwidth, font=sf]{caption}
+\usepackage[font=sf]{caption}
+
+% \usepackage{amsfonts}
+% \usepackage{calc}
+    \usepackage{url}
+% \urlstyle{sf}
+
+%For debugginghttp://blog.thehackerati.com/post/126701202241/eigenstyle
+\definecolor{darkgreen}{rgb}{0,.5,0}
+\newcommand{\chk}{ \textcolor{darkgreen}{{\tt (Check this)}}}
+\newfont{\nf}{cmfib8 at 10pt}
+\newcommand{\note}[1]{ \textcolor{blue}{ {\nf #1}}}
+
+
+\newcommand{\dlee}[2]{\ensuremath{\frac{\partial #1}{\partial #2}}}
+\renewcommand{\vec}[1]{\mathbf{#1}}
+
+%Define date in to be YYYY-MM-DD
+\def\mydate{\leavevmode\hbox{\the\year-\twodigits\month-\twodigits\day}}
+\def\twodigits#1{\ifnum#1<10 0\fi\the#1}
+
+\oddsidemargin=.025in
+\textwidth=6.4in
+
+\newcommand{\vct}[1]{\ensuremath{\overline{\bf #1}}}
+\newcommand{\mat}[1]{\ensuremath{\overline{\overline{#1}}}}
+\newcommand{\trans}[1]{\ensuremath{#1^{\top}}}
+
+
+\begin{document}
+
+\setlength{\parskip}{1.5ex plus0.5ex minus0.2ex}
+
+
+\begin{center}
+{\Large A Gantt Solver} \\
+{\large A practical example of Linear Programming}
+\end{center}
+\begin{flushright}Fergal Mullally\\ \mydate\end{flushright}
+
+Linear Programming is a technique for performing contrained optimisation, where the best value of an objective function is determined given limits on the values of the inputs, either individually, or as part of a group. For example, we might seek to find the largest value of $2x + 4y$ given the contraint that $x-y < 0$.
+
+Unlike Marquart-Levenberg optimisation, a general purpose solver is not the sort of thing you write yourself, instead canned packages are the best way forward. The algorithms are sophisticated and involved, and it's probably not worth your time trying to write one from scratch. I use the package MIP\footnote{\url{https://www.python-mip.com/}} as my solver, many others exist.
+
+
+The Gantt chart is an interesting and practical application of Linear Programming. A Gantt chart is a visualisation of the order in which a set of tasks should be completed given constraints on task order and the skills of the available workforce to complete those tasks. Linear programming can be used to compute the task order that results in the tasks being completed in the least time possible.
+
+
+\section*{Example}
+Suppose I have 5 tasks to complete, in order to make an apple pie. The tasks are
+
+1. Peel apples
+2. Measure ingredients for pastry
+3. Chop apples 
+4. Roll the dough
+5. Combine and place in the oven.
+
+Suppose that the tasks 1,3, and 5 must be completed by Mr. Odd, while tasks 2 and 4 are performed by the pastry chef, Ms. Even. Task 5 can only be started when tasks 3 and 4 are complete, which depend in turn on tasks 1 and 2 respectively. If the duration of each task is known, how long will it take to bake the pie?
+
+
+
+\section*{Formal Description}
+In words, the problem can be expressed like this:
+There are $N$ tasks to be completed by $W$ workers. Each task can be completed by one, and only one, worker, and no worker can work on two tasks simultaneously. Some tasks are dependent on other tasks, i.e they can not be started until the dependent task is completed. We wish to choose an order in which to complete the tasks that results in the tasks being completed as quickly as possible.
+
+Let us express these constraints mathematically.
+
+Let $t_i$ be the start time of the i$^{\mathrm{th}}$ task, and $\tau_i$ its duration.
+Let \mat{D} be a matrix of shape $N \times N$ of dependencies such that $d_{ij}$ is True $\Leftrightarrow$ task $i$ depends on task $j$.
+
+Our dependency constraint can be expressed as
+or
+\begin{equation}
+t_i > t_j + \tau_j ~~~\mathrm{if}~~~ d_{ij} > 0
+\end{equation}
+
+Satisfying this equation ensures that tasks are completed in the correct order, but does not ensure the second constraint that no worker can work on two tasks simultaneously.
+
+Let \mat{P} be a matrix of shape $N \times W$ such that $p_ik$ is true $\Leftrightarrow$ task $i$ must be completed by worker $k$. For two tasks $i$ and $j$, the tasks can not overlap in time if $p_{ik}p_{jk} > 0$. We impose a constraint before solving that $\sum_{i} p_{ik} = 1$, each task can be completed by one and only one person. If we don't impose this constraint our solver will have to do extra work to decide who works on a task if multiple workers are available. This is possible, but beyond the scope of this example.
+
+
+Not overlapping is satisfied if
+\begin{eqnarray}
+t_i &\ge& t_j + \tau_j  \mathrm{~~~ (task~i~starts~after~task~j~ends,~or)}\\
+t_i + \tau_i &\le& t_j  \mathrm{~~~ (task~i~ends~before~task~j~begins)}
+\end{eqnarray}
+
+which we write more symmetrically as
+\begin{eqnarray}
+\label{people}
+t_i - \tau_j  - t_j &\ge& 0  \mathrm{~~~or}\\
+t_i + \tau_i  - t_j &\le& 0
+\end{eqnarray}
+
+Note these constraints need only be imposed if $p_{ik}p_{jk} > 0$.
+
+Now this poses a problem. Linear programming can't accomodate alternative constraints. There is no direct way to say ``satisfy this constraint but not that constraint''. Fortunately there is a work around. Let $r$ be a binary variable that can be either 0 or 1. Then Eqn~\ref{people} can be re-written as
+
+
+\begin{eqnarray}
+\label{people2}
+t_i - \tau_j  - t_j &\ge& -r L  \mathrm{or}\\
+t_i + \tau_i  - t_j) &\le& (1-r) L
+\end{eqnarray}
+
+\noindent
+where $L$ is a very large value, greater than the largest conceivable time. If $r$ is zero, the second equation is always true because $L$ is chosen such that the time difference between any two tasks is always $<L$, and the second equation reduces down what we wrote in Eqn~\ref{people}. If $r = 1$, the first constraint is always true for the same reason.
+
+
+The introduction of a boolean variable means this is no longer a convential linear programming problem, but a {\it mixed integer} linear programming problem (MILP). These are, in general, much harder to solve, but fortunately mixed-integer problems are also solved by the package I'm using.This dummy technique trick can be used whenever you have an OR statement in your problem statement.
+
+The goal of the solver is to finish all tasks in the minimum time possible. Assuming Task 4 is the last task you can specify this as 
+
+\begin{equation}
+\min(t_4)
+\end{equation}
+
+For a general solution, it makes sense to add a dummy task and make it dependent on every other task, then minimise its start time. 
+
+\subsection*{Additional Constraints}
+Some additional constraints are commonly found in the real world. Most importantly, all projects have a start date, expressed as $t_i > 0 \forall i$. Some tasks may have minimum start dates, others may have latest possible end dates (e.g the machine is only available in some time range). These can be accomondated easily in the MIP package by setting the $lb$ and $ub$ parameters of the tunable variables. For other packages, these constraints can be imposed by hand.  Note that setting maximum end dates can cause your solution to become unsolvable, so use those with care.
+
+\subsection*{Other objective functions}
+While the above objective meeds our requirements it does not always choose the best strategy in real problems.. If there is a chain of tasks that can be completed faster than the critical path (the longest chain of tasks in the solution), we would want those completed as soon as possible. That way if something goes wrong, there is margin for recovery before the delay impacts the start of the final task. 
+
+We need to added an additional component to our objective rewarding the algorithm for completing any task as soon as possible. We might even weight it to complete large tasks first, since those are the ones with the most uncertainty in their duration, and the greatest chance to impact the schedule. I haven't figured out the best approach here, but I should think it through.
+
+\subsection*{Implementation details}
+This algorithm is implemented in gantt.py:solve(), with the above example solved in main. There are a couple of extra bits to implement for a full product
+
+\begin{itemize}
+\item A way of reading the task list, assignees, durations and dependencies from a spreadsheet or a csv.
+\item A way to check the requirements on one and only one task per worker are satisfied in the input (DONE)
+\item A way to check that there are no circular dependencies 
+\item A way of displaying the output
+\item A way of sorting the tasks by
+    \begin{itemize}
+    \item Start date
+    \item End date
+    \item Worker
+    \item Path length
+    \end{itemize}
+\end{itemize}
+
+
+\end{document}
